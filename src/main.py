@@ -7,7 +7,7 @@ from util import FileUtil
 NOTION_TOKEN = "secret_key"
 PAGE_IDS = [
     # "8d5eee980f264dd28a6c07e8ecabbb3c",
-    "8d5eee980f264dd28a6c07e8ecabbb3c",
+    "788d6c18679d4c4b9509b9db74f7fa28",
 ]
 EXPORT_FOLDER = "./export"
 
@@ -67,20 +67,22 @@ class OnePageToMd(object):
 
         self.post_run()
 
+    def append_to_md(self, item):
+        self.md += item
+
     def convert_one_block(self, block, child_level=0):
         block_type = block['type']
         if block_type != 'numbered_list_item':
             self.numbered_list_index = 0
 
-        block_data = ""
+        block_data = "    " * child_level
         if block_type == 'paragraph':
-            if not block['paragraph']['rich_text']:
-                block_data = ""
-            else:
-                block_data = block['paragraph']['rich_text'][0]['plain_text']
+            if block['paragraph']['rich_text']:
+                text = block['paragraph']['rich_text'][0]['plain_text']
                 if block['paragraph']['rich_text'][0]['href']:
-                    block_data = f"[{block_data}]({block['paragraph']['rich_text'][0]['href']})"
-            block_data += "\n"  # paragraph add "\n"
+                    block_data += f"[{text}]({block['paragraph']['rich_text'][0]['href']})"
+                else:
+                    block_data += text
         elif block_type == 'heading_1':
             block_data = "# " + block['heading_1']['rich_text'][0]['plain_text']
         elif block_type == 'heading_2':
@@ -89,30 +91,30 @@ class OnePageToMd(object):
             block_data = "### " + block['heading_3']['rich_text'][0]['plain_text']
         elif block_type == 'numbered_list_item':
             self.numbered_list_index += 1
-            block_data = str(self.numbered_list_index) + ". " + block['numbered_list_item']['rich_text'][0]['plain_text']
+            block_data += str(self.numbered_list_index) + ". " + block['numbered_list_item']['rich_text'][0]['plain_text']
         elif block_type == 'bulleted_list_item':
-            block_data = "- " + block['bulleted_list_item']['rich_text'][0]['plain_text'] + "\n"
+            block_data += "- " + block['bulleted_list_item']['rich_text'][0]['plain_text']
         elif block_type == 'image':
             self.img_count += 1
             img_url = block['image']['file']['url']
             print(img_url)
             image_name = self.download_image(img_url)
-            block_data = f"![]({image_name})"
+            block_data += f"\n![]({image_name})"
         elif block_type == 'code':
             language = block['code']['language']
             code_text = ""
             if block['code']['rich_text']:
                 code_text = block['code']['rich_text'][0]['plain_text']
-            block_data = "```" + language + "\n" + code_text + "\n```"
+            block_data = "\n```" + language + "\n" + code_text + "\n```"
 
-        block_data += "\n"
-        self.md += block_data
+        block_data = block_data.replace("\n", "\n" + "    " * child_level)
+        block_data += "    " * child_level + "\n"
 
+        self.append_to_md(block_data)
 
-def test_sub_page_in_block():
-    child_page_id = 'd5b26287-d718-4f03-b741-1b0b177a0fb4'
-    to_md_util = OnePageToMd(EXPORT_FOLDER, "test", child_page_id)
-    to_md_util.convert()
+        if block['has_children']:
+            next_block_id = block['id']
+            self.get_block_data_and_convert(next_block_id, child_level + 1)
 
 
 def main():
@@ -138,6 +140,4 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-
-    test_sub_page_in_block()
+    main()
