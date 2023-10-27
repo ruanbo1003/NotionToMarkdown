@@ -117,12 +117,6 @@ class OnePageToMd(object):
             self.get_block_data_and_convert(next_block_id, child_level + 1)
 
 
-def test_sub_page_in_block():
-    child_page_id = 'd5b26287-d718-4f03-b741-1b0b177a0fb4'
-    to_md_util = OnePageToMd(EXPORT_FOLDER, "test", child_page_id)
-    to_md_util.convert()
-
-
 def main():
     FileUtil.create_dir(EXPORT_FOLDER)
 
@@ -147,5 +141,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-    # test_sub_page_in_block()
